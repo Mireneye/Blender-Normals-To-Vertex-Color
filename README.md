@@ -2,7 +2,7 @@
 ## Overview
 ![Screenshot](http://www.philippseifried.com/github/normals_to_vertex_colors_v2.gif)
 
-A simple Blender 2.8x addon that copies a selected object's normals to its vertex colors. Useful for some shader tricks. Vertex colors go from 0 to 1, so normals are encoded n*0.5+0.5
+A simple Blender addon, updated from 2.8 to 4.0 that copies a selected object's normals to its vertex colors. Useful for some shader tricks. Vertex colors go from 0 to 1, so normals are encoded n*0.5+0.5
 
 Based on the stackexchange solution here: https://blender.stackexchange.com/questions/32584/set-vertex-normals-to-vertex-color-in-python
 
