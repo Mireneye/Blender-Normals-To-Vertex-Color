@@ -18,19 +18,17 @@
 
 bl_info = {
     "name": "Normals To Vertex Colors",
-    "author": "Philipp Seifried",
-    "version": (0, 1, 1),
-    "blender": (2, 80, 0),
+    "author": "Philipp Seifried (Updated to 4.0)",
+    "version": (0, 1, 2),
+    "blender": (4, 0, 0),
     "location": "View3D > Paint > Vertex Color from Normals",
-    "description": "Bakes selected object's normals to active vertex colors. Based on https://blender.stackexchange.com/questions/32584/set-vertex-normals-to-vertex-color-in-python",
+    "description": "Bakes selected object's normals to active vertex colors.",
     "category": "Paint",
 }
 
 import bpy
 from mathutils import Vector
-from bpy.props import (
-    EnumProperty,
-)
+from bpy.props import EnumProperty
 
 
 class NormalsToVertexColors(bpy.types.Operator):
@@ -75,10 +73,7 @@ class NormalsToVertexColors(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if (context.mode != 'PAINT_VERTEX'):
-            return False
-        
-        return True
+        return (context.mode == 'PAINT_VERTEX')
 
     def swizzle(self, result, vec, index, prop):
         if prop == '+X':
@@ -95,38 +90,36 @@ class NormalsToVertexColors(bpy.types.Operator):
             result[index] = -vec[2]
 
     def execute(self, context):
-        current_obj = bpy.context.active_object 
+        current_obj = context.active_object
         mesh = current_obj.data
         if not mesh.vertex_colors:
             mesh.vertex_colors.new()
 
-        mesh.calc_normals_split()
-        mesh.update()
+        color_layer = mesh.vertex_colors.active
+
         for poly in mesh.polygons:
-                for loop_index in poly.loop_indices:
-                    normal = mesh.loops[loop_index].normal.copy()
-                    if (self.space == 'WORLD'):
-                        normal = current_obj.matrix_world.to_3x3() @ normal
-                        normal.normalize()
+            for loop_index in poly.loop_indices:
+                normal = mesh.loops[loop_index].normal.copy()
+                if self.space == 'WORLD':
+                    normal = current_obj.matrix_world.to_3x3() @ normal
+                    normal.normalize()
 
-                    orig_normal = normal.copy()
-                    self.swizzle(normal, orig_normal, 0, self.swizzle_x)
-                    self.swizzle(normal, orig_normal, 1, self.swizzle_y)
-                    self.swizzle(normal, orig_normal, 2, self.swizzle_z)
+                orig_normal = normal.copy()
+                self.swizzle(normal, orig_normal, 0, self.swizzle_x)
+                self.swizzle(normal, orig_normal, 1, self.swizzle_y)
+                self.swizzle(normal, orig_normal, 2, self.swizzle_z)
 
-                    color = (normal * 0.5) + Vector((0.5,) * 3)
-                    color.resize_4d()
+                color = (normal * 0.5) + Vector((0.5,) * 3)
+                color.resize_4d()
 
-                    mesh.vertex_colors.active.data[loop_index].color = color
-
-        mesh.free_normals_split()
-        mesh.update()
+                color_layer.data[loop_index].color = color
 
         return {'FINISHED'}
 
 
 def menu_func(self, context):
     self.layout.operator(NormalsToVertexColors.bl_idname)
+
 
 def register():
     bpy.utils.register_class(NormalsToVertexColors)
@@ -135,7 +128,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(NormalsToVertexColors)
-    bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
+    bpy.types.VIEW3D_MT_paint_vertex.remove(menu_func)
 
 
 if __name__ == "__main__":
